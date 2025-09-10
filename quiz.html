@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Java OOP and Core Concepts Quiz</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .quiz-option { transition: all 0.2s ease-in-out; }
+    .quiz-option.selected { background-color: #3b82f6; color: white; border-color: #2563eb; }
+    .quiz-option:not(.selected):hover { background-color: #f3f4f6; }
+    .correct { background-color: #22c55e !important; color: white !important; border-color: #16a34a !important; }
+    .incorrect { background-color: #ef4444 !important; color: white !important; border-color: #dc2626 !important; }
+    .answered .quiz-option { cursor: default; }
+    .answered .quiz-option input { pointer-events: none; }
+
+    /* Code snippet block */
+    pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 1.5rem 1rem 1rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      position: relative;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: #4a5568;
+      color: white;
+      border: none;
+      padding: 0.25rem 0.6rem;
+      font-size: 0.75rem;
+      border-radius: 0.3rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .copy-btn:hover { background: #2d3748; }
+
+    .custom-checkbox:checked {
+      background-color: #3b82f6; border-color: #2563eb;
+      background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+    }
+    .custom-radio:checked {
+      background-color: #3b82f6; border-color: #2563eb;
+      background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3ccircle cx='8' cy='8' r='3'/%3e%3c/svg%3e");
+    }
+  </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+  <div id="quiz-container" class="bg-white w-full max-w-3xl rounded-xl shadow-lg p-6 md:p-8">
+    <!-- Header -->
+    <div id="quiz-header">
+      <h1 class="text-2xl md:text-3xl font-bold text-gray-800">Java Concepts Quiz</h1>
+      <p class="text-gray-600 mt-2">Test your Java & OOP knowledge with 50 interactive questions.</p>
+      <div class="h-1 bg-gray-200 mt-4 rounded-full">
+        <div id="progress-bar" class="h-1 bg-blue-500 rounded-full transition-all duration-300" style="width:0%"></div>
+      </div>
+      <div class="flex justify-between text-sm text-gray-500 mt-2">
+        <span id="question-counter">Question 1/50</span>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div id="quiz-body" class="mt-6">
+      <h2 id="question-text" class="text-lg md:text-xl font-semibold text-gray-700"></h2>
+      <div id="code-container"></div>
+      
+      <!-- Hint -->
+      <button id="hint-btn" class="mt-4 mb-2 text-blue-500 text-sm underline hover:text-blue-600 transition hidden">
+        Show Hint
+      </button>
+      <p id="question-hint" class="text-sm text-gray-500 mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200 hidden"></p>
+
+      <div id="answer-options" class="space-y-3"></div>
+    </div>
+
+    <!-- Footer -->
+    <div id="quiz-footer" class="mt-8 flex justify-between items-center">
+      <button id="prev-btn" class="bg-gray-200 text-gray-700 font-semibold py-2 px-6 rounded-lg hover:bg-gray-300 transition disabled:opacity-50 disabled:cursor-not-allowed">Previous</button>
+      <button id="next-btn" class="bg-blue-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-blue-600 transition">Next</button>
+      <button id="submit-btn" class="bg-green-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-green-600 transition hidden">Submit</button>
+    </div>
+
+    <!-- Results -->
+    <div id="results-container" class="hidden text-center">
+      <h2 class="text-3xl font-bold text-gray-800">Quiz Complete!</h2>
+      <p class="text-xl text-gray-600 mt-4">Your Score:</p>
+      <p id="score-text" class="text-5xl font-bold text-blue-500 my-2">0 / 50</p>
+      <p id="feedback-text" class="text-lg font-medium"></p>
+      <button id="restart-btn" class="mt-6 bg-blue-500 text-white font-semibold py-2 px-8 rounded-lg hover:bg-blue-600 transition">Restart Quiz</button>
+    </div>
+  </div>
+
+  <script>
+    // === QUIZ DATA ===
+    const quizData = [
+      { question: "What will be the output of the following code?", hint: "The post-increment operator (x++) returns the value before incrementing.", type: "single", answerOptions: [ { text: "6" }, { text: "5", isCorrect: true }, { text: "0" }, { text: "Compilation Error" } ], code: "int x = 5;\nSystem.out.println(x++);" },
+      { question: "Which of the following is NOT a primitive data type in Java?", hint: "Primitives are the most basic data types built into the language.", type: "single", answerOptions: [ { text: "int" }, { text: "String", isCorrect: true }, { text: "boolean" }, { text: "char" } ] },
+      { question: "What is the main purpose of the `super` keyword in Java?", hint: "It relates to the relationship between a subclass and its parent class.", type: "single", answerOptions: [ { text: "To create an instance of a class." }, { text: "To refer to the current object." }, { text: "To access members of the superclass from a subclass.", isCorrect: true }, { text: "To declare a constant variable." } ] },
+      { question: "Which statement is true about method overloading?", hint: "This concept allows methods to share a name.", type: "single", answerOptions: [ { text: "It is a way to achieve runtime polymorphism." }, { text: "It allows multiple methods with the same name but different parameters.", isCorrect: true }, { text: "It requires the use of the `extends` keyword." }, { text: "It can only be done in abstract classes." } ] },
+      { question: "What is the output of this code?", hint: "The `==` operator compares object references, not their content. `new String()` creates a new object in memory.", type: "single", answerOptions: [ { text: "true" }, { text: "false", isCorrect: true }, { text: "Compilation Error" }, { text: "An exception will be thrown." } ], code: "String s1 = \"hello\";\nString s2 = new String(\"hello\");\nSystem.out.println(s1 == s2);" },
+      { question: "Which of the following is a checked exception in Java?", hint: "Checked exceptions must be declared or handled at compile-time.", type: "single", answerOptions: [ { text: "ArrayIndexOutOfBoundsException" }, { text: "NullPointerException" }, { text: "IOException", isCorrect: true }, { text: "ArithmeticException" } ] },
+      { question: "What is the primary purpose of the `finally` block in a try-catch statement?", hint: "Think about code that must execute regardless of success or failure, like closing a file.", type: "single", answerOptions: [ { text: "It executes only when an exception occurs." }, { text: "It executes only when no exception occurs." }, { text: "It is always executed, whether an exception occurs or not.", isCorrect: true }, { text: "It is used to re-throw an exception." } ] },
+      { question: "What is the result of executing this code?", hint: "Array indices in Java start from 0.", type: "single", answerOptions: [ { text: "It prints 5" }, { text: "It throws an `ArrayIndexOutOfBoundsException`.", isCorrect: true }, { text: "It prints 0" }, { text: "It results in a Compilation Error" } ], code: "int[] arr = {1, 2, 3, 4, 5};\nSystem.out.println(arr[5]);" },
+      { question: "Which statement about abstract classes in Java is true?", hint: "Abstract classes are a blend of interfaces and concrete classes.", type: "single", answerOptions: [ { text: "An abstract class can be instantiated using `new`." }, { text: "An abstract class can have both abstract and non-abstract (concrete) methods.", isCorrect: true }, { text: "An abstract class cannot have a constructor." }, { text: "A class can extend multiple abstract classes." } ] },
+      { question: "Which keyword is used to make a class implement an interface?", hint: "This keyword establishes a 'contract' between the class and the interface.", type: "single", answerOptions: [ { text: "`extends`" }, { text: "`implements`", isCorrect: true }, { text: "`inherits`" }, { text: "`uses`" } ] },
+      { question: "What is the output of this code snippet?", hint: "Division by zero throws an exception, which is caught. The `finally` block always runs.", type: "single", answerOptions: [ { text: "AC" }, { text: "BC", isCorrect: true }, { text: "C" }, { text: "B" } ], code: "try {\n    int x = 10 / 0;\n    System.out.print(\"A\");\n} catch (Exception e) {\n    System.out.print(\"B\");\n} finally {\n    System.out.print(\"C\");\n}" },
+      { question: "Which of the following is NOT a core principle of Object-Oriented Programming?", hint: "Consider the four main pillars of OOP.", type: "single", answerOptions: [ { text: "Encapsulation" }, { text: "Inheritance" }, { text: "Polymorphism" }, { text: "Global variables", isCorrect: true } ] },
+      { question: "What is the return type of a class constructor in Java?", hint: "Constructors have a special syntax rule regarding return types.", type: "single", answerOptions: [ { text: "`int`" }, { text: "`void`" }, { text: "The class type" }, { text: "It does not have a return type.", isCorrect: true } ] },
+      { question: "What does this loop print to the console?", hint: "The `break` statement immediately terminates the loop.", type: "single", answerOptions: [ { text: "0 1 2 3 4 " }, { text: "0 1 2 ", isCorrect: true }, { text: "0 1 2 4 " }, { text: "0 1 2 3 " } ], code: "for (int i=0; i<5; i++) {\n    if (i==3) break;\n    System.out.print(i + \" \");\n}" },
+      { question: "Which syntax is correct for creating an object of a class named `MyClass`?", hint: "Object instantiation requires a specific keyword.", type: "single", answerOptions: [ { text: "MyClass obj = new MyClass();", isCorrect: true }, { text: "MyClass obj = MyClass();" }, { text: "new MyClass() = obj;" }, { text: "MyClass obj = new MyClass;" } ] },
+      { question: "What is the purpose of the `static` keyword?", hint: "Static members are associated with the class itself, not individual instances.", type: "single", answerOptions: [ { text: "To make a member belong to an object instance." }, { text: "To make a member belong to the class, rather than an instance.", isCorrect: true }, { text: "To prevent a method from being overridden." }, { text: "To make a class abstract." } ] },
+      { question: "What is the output of this code?", hint: "Strings in Java are immutable. Methods like `concat` return a new string.", type: "single", answerOptions: [ { text: "Hello World" }, { text: "Hello", isCorrect: true }, { text: "World" }, { text: "Compilation Error" } ], code: "String s = \"Hello\";\ns.concat(\" World\");\nSystem.out.println(s);" },
+      { question: "Which of these collection classes is synchronized and considered thread-safe?", hint: "This is one of the legacy collection classes.", type: "single", answerOptions: [ { text: "ArrayList" }, { text: "LinkedList" }, { text: "Vector", isCorrect: true }, { text: "HashSet" } ] },
+      { question: "What is a key difference between an interface and an abstract class?", hint: "Think about Java's inheritance model and its limitations.", type: "single", answerOptions: [ { text: "Interfaces can have instance variables." }, { text: "A class can implement multiple interfaces but extend only one class.", isCorrect: true }, { text: "Interfaces can have concrete method implementations by default." }, { text: "An interface is a class." } ] },
+      { question: "What does this `while` loop print?", hint: "Trace the value of `i` through each iteration of the loop.", type: "single", answerOptions: [ { text: "0 1 2 ", isCorrect: true }, { text: "0 1 2 3 " }, { text: "1 2 3 " }, { text: "An infinite loop" } ], code: "int i=0;\nwhile(i<3){\n    System.out.print(i + \" \");\n    i++;\n}" },
+      { question: "Which are core features of Object-Oriented Programming? (Select all that apply)", hint: "There are four main pillars of OOP.", type: "multiple", answerOptions: [ { text: "Encapsulation", isCorrect: true }, { text: "Procedural Programming" }, { text: "Inheritance", isCorrect: true }, { text: "Polymorphism", isCorrect: true } ] },
+      { question: "Which keywords can prevent a method from being overridden? (Select all that apply)", hint: "Finality, class-level members, and visibility can all affect overriding.", type: "multiple", answerOptions: [ { text: "public" }, { text: "final", isCorrect: true }, { text: "static", isCorrect: true }, { text: "private", isCorrect: true } ] },
+      { question: "Which of the following are unchecked exceptions in Java? (Select all that apply)", hint: "Unchecked exceptions are `RuntimeException`s that are not checked at compile time.", type: "multiple", answerOptions: [ { text: "NullPointerException", isCorrect: true }, { text: "IOException" }, { text: "ArrayIndexOutOfBoundsException", isCorrect: true }, { text: "ArithmeticException", isCorrect: true } ] },
+      { question: "Which collection classes are NOT synchronized by default? (Select all that apply)", hint: "Most modern collections favor performance over built-in thread safety.", type: "multiple", answerOptions: [ { text: "Vector" }, { text: "ArrayList", isCorrect: true }, { text: "LinkedList", isCorrect: true }, { text: "HashSet", isCorrect: true } ] },
+      { question: "Which declarations are valid ways to create a list? (Select all that apply)", hint: "You can declare using the interface or the concrete class.", type: "multiple", answerOptions: [ { text: "List<String> list = new ArrayList<>();", isCorrect: true }, { text: "ArrayList<String> list = new ArrayList<>();", isCorrect: true }, { text: "List<String> list = new List<>();" }, { text: "List<String> list = new LinkedList<>();", isCorrect: true } ] },
+      { question: "What is the default value of an uninitialized instance variable of type `String`?", hint: "For any object reference type, the default is the same.", type: "single", answerOptions: [ { text: "\"\" (empty string)" }, { text: "null", isCorrect: true }, { text: "undefined" }, { text: "It causes a compilation error." } ] },
+      { question: "What does the `this()` call do inside a constructor?", hint: "This is a mechanism for constructor chaining.", type: "single", answerOptions: [ { text: "It calls a method of the current object." }, { text: "It calls another constructor in the same class.", isCorrect: true }, { text: "It calls the superclass constructor." }, { text: "It is invalid syntax." } ] },
+      { question: "Which statement is true about the `finalize()` method?", hint: "This method is related to garbage collection and its use is discouraged.", type: "single", answerOptions: [ { text: "It is called by the programmer to destroy an object." }, { text: "It is guaranteed to be called before an object is garbage collected." }, { text: "It is a method from the Object class, and it's recommended not to rely on it.", isCorrect: true }, { text: "It is the same as the `finally` block." } ] },
+      { question: "What is the output of this print statement?", hint: "Operator precedence: multiplication happens before string concatenation.", type: "single", answerOptions: [ { text: "Hello 102" }, { text: "Hello 20", isCorrect: true }, { text: "Hello 10 * 2" }, { text: "Compilation Error" } ], code: "System.out.println(\"Hello \" + 10 * 2);" },
+      { question: "Which of these are functional interfaces? (Select all that apply)", hint: "A functional interface has exactly one abstract method.", type: "multiple", answerOptions: [ { text: "Runnable", isCorrect: true }, { text: "Serializable" }, { text: "ActionListener", isCorrect: true }, { text: "List" } ] },
+      { question: "How do you get the number of key-value pairs in a `HashMap` called `myMap`?", hint: "Collections have a common method for getting their number of elements.", type: "single", answerOptions: [ { text: "myMap.length" }, { text: "myMap.length()" }, { text: "myMap.size()", isCorrect: true }, { text: "myMap.capacity()" } ] },
+      { question: "What is the result of `\"hello\".equals(\"Hello\")`?", hint: "The `.equals()` method is case-sensitive. For case-insensitive, use `.equalsIgnoreCase()`.", type: "single", answerOptions: [ { text: "true" }, { text: "false", isCorrect: true }, { text: "Compilation Error" }, { text: "Throws an exception" } ] },
+      { question: "What will this code print?", hint: "The `add(index, element)` method inserts an element at a specific position, shifting subsequent elements.", type: "single", answerOptions: [ { text: "[A, B, C]" }, { text: "[A, C, B]", isCorrect: true }, { text: "[C, A, B]" }, { text: "[A, B]" } ], code: "java.util.ArrayList<String> list = new java.util.ArrayList<>();\nlist.add(\"A\");\nlist.add(\"B\");\nlist.add(1, \"C\");\nSystem.out.println(list);" },
+      { question: "Which keyword is used to manually throw an exception object?", hint: "This keyword is used with an instance of an exception, like `throw new Exception()`.", type: "single", answerOptions: [ { text: "`throws`" }, { text: "`throw`", isCorrect: true }, { text: "`catch`" }, { text: "`finally`" } ] },
+      { question: "Which are valid states in a Java thread's lifecycle? (Select all that apply)", hint: "A thread goes through several defined states from creation to termination.", type: "multiple", answerOptions: [ { text: "NEW", isCorrect: true }, { text: "RUNNABLE", isCorrect: true }, { text: "BLOCKED", isCorrect: true }, { text: "FINISHED" } ] },
+      { question: "What is the main difference between `StringBuilder` and `StringBuffer`?", hint: "One is synchronized (thread-safe), and the other is not, which affects performance.", type: "single", answerOptions: [ { text: "`StringBuilder` is synchronized, `StringBuffer` is not." }, { text: "`StringBuffer` is synchronized, `StringBuilder` is not.", isCorrect: true }, { text: "They are identical in functionality and performance." }, { text: "`StringBuilder` is for numbers, `StringBuffer` is for text." } ] },
+      { question: "What does this code print?", hint: "This is the ternary operator, a compact if-else statement.", type: "single", answerOptions: [ { text: "Prints Less" }, { text: "Prints Greater", isCorrect: true }, { text: "Compilation Error" }, { text: "Prints nothing" } ], code: "int x = 10;\nString result = (x > 5) ? \"Greater\" : \"Less\";\nSystem.out.println(result);" },
+      { question: "Which access modifier makes a member visible only within its own class?", hint: "This is the most restrictive access modifier available.", type: "single", answerOptions: [ { text: "public" }, { text: "protected" }, { text: "private", isCorrect: true }, { text: "default (no keyword)" } ] },
+      { question: "Which of these are valid lambda expressions? (Select all that apply)", hint: "Lambda syntax is `(parameters) -> { body }` or a more concise form.", type: "multiple", answerOptions: [ { text: "() -> System.out.println(\"Hi\");", isCorrect: true }, { text: "x -> x * x;", isCorrect: true }, { text: "(int x, int y) -> { return x + y; }", isCorrect: true }, { text: "void run() -> {}" } ] },
+      { question: "What will `Math.round(2.6)` return?", hint: "Standard rounding rules apply: >= .5 rounds up, < .5 rounds down.", type: "single", answerOptions: [ { text: "2.0" }, { text: "2" }, { text: "3.0" }, { text: "3", isCorrect: true } ] },
+      { question: "Which of the following creates a truly unmodifiable (immutable) list?", hint: "One factory method creates a list whose size and elements cannot be changed.", type: "single", answerOptions: [ { text: "new java.util.ArrayList<>()" }, { text: "java.util.List.of(\"A\", \"B\")", isCorrect: true }, { text: "java.util.Arrays.asList(\"A\", \"B\")" }, { text: "new java.util.LinkedList<>()" } ] },
+      { question: "In a `switch` statement, what happens if a `case` does not have a `break` statement?", hint: "This is known as 'fall-through' and can sometimes be a source of bugs.", type: "single", answerOptions: [ { text: "It causes a compilation error." }, { text: "Execution continues to the code in the next case block.", isCorrect: true }, { text: "The switch statement terminates immediately." }, { text: "Only the default case is executed." } ] },
+      { question: "Which statements about Java constructors are true? (Select all that apply)", hint: "Consider their name, return type, and when they are called.", type: "multiple", answerOptions: [ { text: "A constructor must have the same name as the class.", isCorrect: true }, { text: "A constructor can have a `void` return type." }, { text: "A constructor is called automatically when an object is created.", isCorrect: true }, { text: "A class can have only one constructor." } ] },
+      { question: "What is the output of this code?", hint: "String methods that seem to modify a string actually return a new string. You must reassign the variable.", type: "single", answerOptions: [ { text: "Java" }, { text: "java" }, { text: "JAVA", isCorrect: true }, { text: "Compilation Error" } ], code: "String s = \"Java\";\ns = s.toUpperCase();\nSystem.out.println(s);" },
+      { question: "What is the output of the following code?", hint: "Keys in a Map must be unique. Adding a new value with an existing key overwrites the old value.", type: "single", answerOptions: [ { text: "1" }, { text: "2" }, { text: "3", isCorrect: true }, { text: "null" } ], code: "java.util.Map<String, Integer> map = new java.util.HashMap<>();\nmap.put(\"A\", 1);\nmap.put(\"B\", 2);\nmap.put(\"A\", 3);\nSystem.out.println(map.get(\"A\"));" },
+      { question: "Which concept allows a method to be executed differently based on the object that calls it?", hint: "This is a core pillar of OOP, meaning 'many forms'.", type: "single", answerOptions: [ { text: "Encapsulation" }, { text: "Inheritance" }, { text: "Polymorphism", isCorrect: true }, { text: "Abstraction" } ] },
+      { question: "Which of the following are valid variable names in Java? (Select all that apply)", hint: "Variable names cannot start with a number and cannot be reserved keywords.", type: "multiple", answerOptions: [ { text: "_myVariable", isCorrect: true }, { text: "$amount", isCorrect: true }, { text: "1stPlace" }, { text: "final" } ] },
+      { question: "What is the main benefit of the `try-with-resources` statement?", hint: "It simplifies the management of resources that need to be closed.", type: "single", answerOptions: [ { text: "To catch multiple exception types in one block." }, { text: "To ensure a resource is automatically closed after use, avoiding resource leaks.", isCorrect: true }, { text: "To try allocating more memory for a resource." }, { text: "To define a resource that cannot be changed (is final)." } ] },
+      { question: "Which statement about static methods is true?", hint: "They belong to the class, not an instance, which imposes some limitations.", type: "single", answerOptions: [ { text: "They can access instance variables directly." }, { text: "They can be overridden in a subclass." }, { text: "They can be called without creating an object of the class.", isCorrect: true }, { text: "They must return a value." } ] },
+      { question: "What does the `transient` keyword signify for a variable?", hint: "It is related to the process of serialization, which is writing an object's state to a stream.", type: "single", answerOptions: [ { text: "The variable is temporary and destroyed after method execution." }, { text: "The variable should be skipped (not serialized) when its object is written to a stream.", isCorrect: true }, { text: "The variable is guaranteed to be thread-safe." }, { text: "The variable can be accessed from any package." } ] }
+    ];
+
+    let currentQuestionIndex = 0;
+    const userAnswers = new Array(quizData.length).fill(null);
+
+    const progressBar = document.getElementById("progress-bar");
+    const questionCounter = document.getElementById("question-counter");
+    const questionText = document.getElementById("question-text");
+    const codeContainer = document.getElementById("code-container");
+    const questionHint = document.getElementById("question-hint");
+    const hintBtn = document.getElementById("hint-btn");
+    const answerOptionsContainer = document.getElementById("answer-options");
+
+    const prevBtn = document.getElementById("prev-btn");
+    const nextBtn = document.getElementById("next-btn");
+    const submitBtn = document.getElementById("submit-btn");
+    const restartBtn = document.getElementById("restart-btn");
+
+    const quizHeader = document.getElementById("quiz-header");
+    const quizBody = document.getElementById("quiz-body");
+    const quizFooter = document.getElementById("quiz-footer");
+    const resultsContainer = document.getElementById("results-container");
+
+    function showQuestion(index) {
+      const q = quizData[index];
+      questionText.textContent = q.question;
+      codeContainer.innerHTML = "";
+      
+      if (q.code) {
+        const pre = document.createElement("pre");
+        const codeText = q.code;
+        pre.textContent = codeText;
+        const btn = document.createElement("button");
+        btn.className = "copy-btn";
+        btn.textContent = "Copy";
+        btn.onclick = () => {
+          navigator.clipboard.writeText(codeText);
+          btn.textContent = "Copied!";
+          setTimeout(() => btn.textContent = "Copy", 1500);
+        };
+        pre.appendChild(btn);
+        codeContainer.appendChild(pre);
+      }
+      
+      if (q.hint) {
+        hintBtn.classList.remove("hidden");
+        questionHint.textContent = q.hint;
+        questionHint.classList.add("hidden");
+        hintBtn.textContent = "Show Hint";
+      } else {
+        hintBtn.classList.add("hidden");
+        questionHint.classList.add("hidden");
+      }
+      
+      answerOptionsContainer.innerHTML = "";
+      answerOptionsContainer.classList.remove("answered");
+      const inputType = q.type === "multiple" ? "checkbox" : "radio";
+      q.answerOptions.forEach((opt, i) => {
+        const label = document.createElement("label");
+        label.className = "quiz-option flex items-center p-4 border-2 border-gray-300 rounded-lg cursor-pointer";
+
+        const input = document.createElement("input");
+        input.type = inputType;
+        input.name = `q${index}`;
+        input.value = i;
+        input.className = (q.type === "multiple" ? "custom-checkbox" : "custom-radio") + " h-5 w-5 mr-4 flex-shrink-0";
+
+        const span = document.createElement("span");
+        span.textContent = opt.text;
+
+        label.appendChild(input);
+        label.appendChild(span);
+        answerOptionsContainer.appendChild(label);
+
+        input.addEventListener("change", () => handleSelection(index, q.type));
+      });
+      
+      if (userAnswers[index] !== null) {
+          loadAnswer(index);
+          if(q.type === 'single') {
+              showAnswerFeedback(index);
+          }
+      }
+
+      updateProgress();
+      updateNavigation();
+    }
+    
+    hintBtn.onclick = () => {
+      questionHint.classList.toggle("hidden");
+      hintBtn.textContent = questionHint.classList.contains("hidden") ? "Show Hint" : "Hide Hint";
+    };
+    
+    function showAnswerFeedback(qIndex) {
+        const q = quizData[qIndex];
+        if (q.type !== 'single') return;
+
+        const labels = answerOptionsContainer.querySelectorAll("label");
+        const userAnswer = userAnswers[qIndex];
+
+        answerOptionsContainer.classList.add("answered");
+
+        const correctIndex = q.answerOptions.findIndex(opt => opt.isCorrect);
+
+        if (labels[correctIndex]) {
+            labels[correctIndex].classList.add("correct");
+        }
+
+        if (userAnswer !== null && userAnswer !== correctIndex) {
+            if (labels[userAnswer]) {
+                labels[userAnswer].classList.add("incorrect");
+            }
+        }
+    }
+
+    function handleSelection(qIndex, type) {
+      const inputs = answerOptionsContainer.querySelectorAll("input");
+      const labels = answerOptionsContainer.querySelectorAll("label");
+      if (type === "single") {
+        userAnswers[qIndex] = null;
+        inputs.forEach(input => {
+          if (input.checked) {
+            userAnswers[qIndex] = parseInt(input.value);
+          }
+        });
+        showAnswerFeedback(qIndex);
+      } else {
+        const selected = [];
+        inputs.forEach(input => {
+          input.parentElement.classList.toggle("selected", input.checked);
+          if (input.checked) selected.push(parseInt(input.value));
+        });
+        userAnswers[qIndex] = selected.length ? selected.sort((a, b) => a - b) : null;
+      }
+    }
+
+    function loadAnswer(index) {
+      const saved = userAnswers[index];
+      if (saved === null) return;
+      const inputs = answerOptionsContainer.querySelectorAll("input");
+      const labels = answerOptionsContainer.querySelectorAll("label");
+      if (Array.isArray(saved)) {
+        saved.forEach(i => {
+            if(inputs[i]){
+                inputs[i].checked = true;
+                labels[i].classList.add("selected");
+            }
+        });
+      } else {
+        if(inputs[saved]){
+            inputs[saved].checked = true;
+        }
+      }
+    }
+
+    function updateProgress() {
+      progressBar.style.width = ((currentQuestionIndex + 1) / quizData.length * 100) + "%";
+      questionCounter.textContent = `Question ${currentQuestionIndex + 1}/${quizData.length}`;
+    }
+
+    function updateNavigation() {
+      prevBtn.disabled = currentQuestionIndex === 0;
+      if (currentQuestionIndex === quizData.length - 1) {
+        nextBtn.classList.add("hidden");
+        submitBtn.classList.remove("hidden");
+      } else {
+        nextBtn.classList.remove("hidden");
+        submitBtn.classList.add("hidden");
+      }
+    }
+
+    function calculateScore() {
+      let score = 0;
+      quizData.forEach((q, i) => {
+        const ans = userAnswers[i];
+        if (ans === null) return;
+        if (q.type === "single") {
+          const correct = q.answerOptions.findIndex(a => a.isCorrect);
+          if (ans === correct) score++;
+        } else {
+          const correct = q.answerOptions.map((a, idx) => a.isCorrect ? idx : -1).filter(x => x >= 0);
+          if (JSON.stringify([...ans].sort()) === JSON.stringify(correct.sort())) score++;
+        }
+      });
+      return score;
+    }
+
+    function showResults() {
+      const score = calculateScore();
+      quizHeader.classList.add("hidden");
+      quizBody.classList.add("hidden");
+      quizFooter.classList.add("hidden");
+      resultsContainer.classList.remove("hidden");
+      document.getElementById("score-text").textContent = `${score} / ${quizData.length}`;
+      const pct = (score / quizData.length) * 100;
+      const fb = document.getElementById("feedback-text");
+      if (pct >= 90) {
+        fb.textContent = "Excellent! You're a Java Master!";
+        fb.className = "text-lg font-medium text-green-600";
+      } else if (pct >= 70) {
+        fb.textContent = "Great job! You have a solid understanding.";
+        fb.className = "text-lg font-medium text-blue-600";
+      } else if (pct >= 50) {
+        fb.textContent = "Good effort. Keep practicing.";
+        fb.className = "text-lg font-medium text-yellow-600";
+      } else {
+        fb.textContent = "Needs improvement. Review the basics and try again.";
+        fb.className = "text-lg font-medium text-red-600";
+      }
+    }
+
+    prevBtn.onclick = () => { if (currentQuestionIndex > 0) { currentQuestionIndex--; showQuestion(currentQuestionIndex); } };
+    nextBtn.onclick = () => { if (currentQuestionIndex < quizData.length - 1) { currentQuestionIndex++; showQuestion(currentQuestionIndex); } };
+    submitBtn.onclick = showResults;
+    restartBtn.onclick = () => { 
+        currentQuestionIndex = 0; 
+        userAnswers.fill(null); 
+        resultsContainer.classList.add("hidden"); 
+        quizHeader.classList.remove("hidden"); 
+        quizBody.classList.remove("hidden"); 
+        quizFooter.classList.remove("hidden"); 
+        showQuestion(0); 
+    };
+
+    showQuestion(0);
+  </script>
+</body>
+</html>
